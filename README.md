@@ -1,16 +1,27 @@
 # PyQt5 Host Computer
-> NOTE: This repo contains code for the whole project
+
+> **NOTE:** This repo contains code for the whole project.
+
+![alt text](image.png)
+
+---
 
 ## Installation
-1. Create a conda env by running
-```conda env create -f environment.yml ```
-and then activate it by running
-```conda activate pyqt```
+
+1. Create a `conda` environment by running the following command:
+    ```bash
+    conda env create -f environment.yml
+    ```
+
+2. Activate the environment:
+    ```bash
+    conda activate pyqt
+    ```
+
+---
 
 ## Usage
-Create the UI by running
-```Python main.py```
 
-## Pack
-Create executable file by running
-```executable file```
+To create the UI, run the following command:
+```bash
+python main.py
