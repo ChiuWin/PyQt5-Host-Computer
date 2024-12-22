@@ -7,6 +7,11 @@ import serial
 import struct
 from PyQt5.QtWidgets import QMessageBox
 import csv
+
+import pyocd
+from pyocd.core.helpers import ConnectHelper
+from pyocd.core.memory_map import MemoryType
+
 #对print进行重定向
 class QTextEditStream:
     def __init__(self, text_edit: QTextEdit):
@@ -49,7 +54,12 @@ class Board2PC:
     def __repr__(self):
         """ 类的字符串表示 """
         return f"Board2PC(timestamp2={self.timestamp2}, stopFlag_={self.stopFlag_}, move_={self.move_})"
-    
+
+
+
+
+
+
     # def update_move_2(self, move_2_value):
     #     """ 更新 move_2 的值，并根据其值在仪表盘上显示方向 """
     #     self.move_ = move_2_value
@@ -73,8 +83,6 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
         super(ToolUi, self).__init__()
         self.setupUi(self)
 
-        # 用于判定是否连接上
-        self.connected = 0 # 默认未连接
 
         # 用于存储每次 stopFlag_2 从 1 变为 0 的时间戳
         self.timestamp_list = []  
@@ -82,7 +90,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
         # 初始化PC2Board设置
         self.ser = None
         self.timestamp = int(time.time())  # 初始化时间戳
-        self.connect_ = 1  # 表示连接状态，0断开，1链接
+        self.connect_ = 1  # 表示连接状态，0断开，1链接  默认未连接
         self.move_ = 0  # 初始静止
         self.mode_ = 0  # 表示模式，0遥控，1循迹，默认遥控
         self.supercap_ = 0  # 是否加速，0不加速，1加速
@@ -93,6 +101,19 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
         self.timestamp2 = 0 #初始化时间
         self.stopFlag_2 = 0 #初始前进
         self.move_2 = 0 #初始停止
+
+
+        print("=== PyOCD 调试界面 ===")
+        print("正在连接到 DAPLink 设备，请稍候...")
+
+        # 自动连接到设备
+        self.session = ConnectHelper.session_with_chosen_probe()
+        if self.session is None:
+            print("未找到任何支持的调试器设备，请检查连接。")
+            sys.exit(1)
+        
+
+
 
         # 连接comboBox_mode的变化信号
         self.comboBox_mode.currentIndexChanged.connect(self.update_mode)
@@ -115,6 +136,9 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.send_periodic_data)
         self.timer.timeout.connect(self.receive_data)  # 每秒触发一次接收数据
+
+        self.timer.timeout.connect(self.ocd_send)
+        self.timer.timeout.connect(self.ocd_receive) # 每秒触发一次ocd
 
         # 启动定时器，但初始时不启动数据发送
         self.timer.start(1000)  # 每1000毫秒触发一次
@@ -146,6 +170,131 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
         # 设置将 print 输出重定向到 textEdit_1
         self.text_edit_stream = QTextEditStream(self.textEdit_1)  # 假设你的 UI 中有 textEdit_1
         sys.stdout = self.text_edit_stream  # 重定向标准输出
+
+
+    def ocd_send(self):
+        try:
+            with self.session:
+                target = self.session.target
+                target.resume()  # 确保目标处于运行状态
+
+                print("成功连接到设备！")
+                print(f"设备名称: {self.session.board.target_type}")
+                
+                # 发送数据地址
+                # 在实际应用中，你可能需要发送多个数据地址，或者发送不同的数据类型。
+                # 比如：整数、浮动值、字节流等。
+
+                # 假设我们有几个需要发送的数据
+                data_to_send_1 = 0x12345678  # 要发送的32位数据
+                data_to_send_2 = 0xA5       # 要发送的8位数据
+                data_to_send_3 = 0x01       # 要发送的8位数据
+
+                # 发送数据到目标设备
+                #timestamp
+                try:
+                    addr_1 = 0x20000814  # 地址1，假设我们发送32位数据
+                    target.write32(addr_1, 5)  # 写入32位数据
+                    print(f"发送数据到地址 0x{addr_1:08X}: 0x{data_to_send_1:08X}")
+                except Exception as e:
+                    print(f"发送数据到地址 0x{addr_1} 时出错: {str(e)}")
+
+                #connect_
+                try:
+                    addr_2 = 0x200003A0  # 地址2，假设我们发送8位数据
+                    target.write8(addr_2, data_to_send_2)  # 写入8位数据
+                    print(f"发送数据到地址 0x{addr_2:08X}: 0x{data_to_send_2:02X}")
+                except Exception as e:
+                    print(f"发送数据到地址 0x{addr_2} 时出错: {str(e)}")
+
+                try:
+                    addr_3 = 0x200003A1  # 地址3，假设我们发送8位数据
+                    target.write8(addr_3, data_to_send_3)  # 写入8位数据
+                    print(f"发送数据到地址 0x{addr_3:08X}: 0x{data_to_send_3:02X}")
+                except Exception as e:
+                    print(f"发送数据到地址 0x{addr_3} 时出错: {str(e)}")
+
+                try:
+                    addr_3 = 0x200003A1  # 地址3，假设我们发送8位数据
+                    target.write8(addr_3, data_to_send_3)  # 写入8位数据
+                    print(f"发送数据到地址 0x{addr_3:08X}: 0x{data_to_send_3:02X}")
+                except Exception as e:
+                    print(f"发送数据到地址 0x{addr_3} 时出错: {str(e)}")
+
+
+                try:
+                    addr_3 = 0x200003A1  # 地址3，假设我们发送8位数据
+                    target.write8(addr_3, data_to_send_3)  # 写入8位数据
+                    print(f"发送数据到地址 0x{addr_3:08X}: 0x{data_to_send_3:02X}")
+                except Exception as e:
+                    print(f"发送数据到地址 0x{addr_3} 时出错: {str(e)}")
+
+                try:
+                    addr_3 = 0x200003A1  # 地址3，假设我们发送8位数据
+                    target.write8(addr_3, data_to_send_3)  # 写入8位数据
+                    print(f"发送数据到地址 0x{addr_3:08X}: 0x{data_to_send_3:02X}")
+                except Exception as e:
+                    print(f"发送数据到地址 0x{addr_3} 时出错: {str(e)}")
+
+
+                try:
+                    addr_3 = 0x200003A1  # 地址3，假设我们发送8位数据
+                    target.write8(addr_3, data_to_send_3)  # 写入8位数据
+                    print(f"发送数据到地址 0x{addr_3:08X}: 0x{data_to_send_3:02X}")
+                except Exception as e:
+                    print(f"发送数据到地址 0x{addr_3} 时出错: {str(e)}")                    
+
+        except Exception as e:
+            print(f"调试器会话出错: {str(e)}")
+
+
+
+    def ocd_receive(self):
+        try:
+            with self.session:
+                target = self.session.target
+                target.resume()  # 确保目标处于运行状态
+
+                # print("成功连接到设备！")
+                # print(f"设备名称: {self.session.board.target_type}")
+                
+                # #接收数据地址
+                # address1 = 0x2000039C
+                # address2 = 0x200003A0
+                # address3 = 0x200003A1
+
+                try:
+                    addr = 0x2000080C#int(str(address1), 16)
+                    value = target.read32(addr)  # 读取指定地址的数据（32位）
+                    print(f"地址 0x{addr:08X} 的数据: 0x{value:08X}")
+                except ValueError:
+                    print("输入的地址无效，请重新输入。")
+                except Exception as e:
+                    print(f"读取地址 0x{addr} 时出错: {str(e)}")
+                
+
+
+                try:
+                    addr = 0x20000814#int(str(address2), 16)
+                    value = target.read8(addr)  # 读取指定地址的数据（8位）
+                    print(f"地址 0x{addr:08X} 的数据: 0x{value:08X}")
+                except ValueError:
+                    print("输入的地址无效，请重新输入。")
+                except Exception as e:
+                    print(f"读取地址 0x{addr} 时出错: {str(e)}")
+
+                try:
+                    addr = 0x20000811#int(str(address3), 16)
+                    value = target.read8(addr)  # 读取指定地址的数据（8位）
+                    print(f"地址 0x{addr:08X} 的数据: 0x{value:08X}")
+                except ValueError:
+                    print("输入的地址无效，请重新输入。")
+                except Exception as e:
+                    print(f"读取地址 0x{addr} 时出错: {str(e)}")
+
+        except Exception as e:
+            print(f"调试器会话出错: {str(e)}")
+
 
 
 
@@ -194,14 +343,14 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             # 满足条件，打开串口
             if self.ser is None:
                 self.ser = self.init_serial_port(port='COM2', baudrate=9600)
-                self.connected = 1
+                self.connect_ = 1
                 print("已连接")
         else:
             # 不满足条件，关闭串口
             if self.ser:
                 self.ser.close()
                 self.ser = None
-                self.connected = 0
+                self.connect_ = 0
                 print("未连接")
                 
 
@@ -275,7 +424,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
 
     def keyPressEvent(self, event):
         """ 重载按键事件 """
-        if(self.mode_ == 0 and self.connected == 1):
+        if(self.mode_ == 0 and self.connect_ == 1):
             if event.key() == Qt.Key_W:
                 self.pushButton_goforward.setStyleSheet("background-color: green")
                 self.pushButton_forward.setStyleSheet("background-color: blue")
@@ -325,7 +474,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
 
     def keyReleaseEvent(self, event):
         """ 重载按键松开事件，按键松开时恢复原颜色并重置move_ """
-        if(self.mode_ == 0 and self.connected == 1):
+        if(self.mode_ == 0 and self.connect_ == 1):
             if event.key() == Qt.Key_W:
                 self.pushButton_goforward.setStyleSheet("")
                 self.pushButton_forward.setStyleSheet("")
@@ -368,7 +517,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
 
     def set_move_forward(self):
         """前进按钮点击"""
-        if(self.mode_ == 0 and self.connected == 1):
+        if(self.mode_ == 0 and self.connect_ == 1):
             self.pushButton_goforward.setStyleSheet("background-color: green")
             self.pushButton_forward.setStyleSheet("background-color: blue")
             self.pushButton_stop.setStyleSheet("")
@@ -376,7 +525,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             print("前进 (W)")
 
     def set_move_backup(self):
-        if(self.mode_ == 0 and self.connected == 1):
+        if(self.mode_ == 0 and self.connect_ == 1):
             self.pushButton_backup.setStyleSheet("background-color: green")
             self.pushButton_back.setStyleSheet("background-color: blue")
             self.pushButton_stop.setStyleSheet("")
@@ -384,7 +533,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             print("后退 (S)")
 
     def set_move_turnleft(self):
-        if(self.mode_ == 0 and self.connected == 1):
+        if(self.mode_ == 0 and self.connect_ == 1):
             self.pushButton_turnleft.setStyleSheet("background-color: green")
             self.pushButton_left.setStyleSheet("background-color: blue")
             self.pushButton_stop.setStyleSheet("")
@@ -392,7 +541,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             print("左转 (A)")
 
     def set_move_turnright(self):
-        if(self.mode_ == 0 and self.connected == 1):
+        if(self.mode_ == 0 and self.connect_ == 1):
             self.pushButton_turnright.setStyleSheet("background-color: green")
             self.pushButton_right.setStyleSheet("background-color: blue")
             self.pushButton_stop.setStyleSheet("")
@@ -400,7 +549,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             print("右转 (D)")
 
     def set_supercap_speedup(self):
-        if(self.mode_ == 0 and self.connected == 1):
+        if(self.mode_ == 0 and self.connect_ == 1):
             self.supercap_ = 1- self.supercap_#切换加速状态
             print("切换加速模式(J)")
             if(self.supercap_ == 0):
@@ -414,11 +563,11 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
                 self.pushButton_fast.setStyleSheet("background-color: blue")
                 self.pushButton_slow.setStyleSheet("")
                 print("已加速")
-        elif(self.mode_ == 1 and self.connected == 1):
+        elif(self.mode_ == 1 and self.connect_ == 1):
             print("Invalid:只有遥控模式才可加速")
 
     def reset_move(self):
-        if(self.mode_ == 0 and self.connected == 1):
+        if(self.mode_ == 0 and self.connect_ == 1):
             self.pushButton_goforward.setStyleSheet("")
             self.pushButton_backup.setStyleSheet("")
             self.pushButton_turnleft.setStyleSheet("")
@@ -434,9 +583,11 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
     def receive_data(self):
         """ 从串口接收数据并解析 """
         if self.ser and self.ser.in_waiting > 0:
+        # if (1):
             # 如果串口有数据待接收
             data = self.ser.read(6)  # 假设结构体大小是 6 字节
             if len(data) == 6:
+            # if(1):
                 # 如果接收到的字节流长度是 6 字节（符合 Board2PC_t 结构体大小）
                 board_data = Board2PC.from_bytes(data)
                 
@@ -514,7 +665,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             else:
                 print("接收数据不完整")
         else:
-            if(self.connected):
+            if(self.connect_):
                 print("下位机没有发送数据")
                 if(self.mode_ == 1):
                     self.pushButton_stopstate.setStyleSheet("")
