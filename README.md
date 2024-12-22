@@ -25,3 +25,20 @@
 To create the UI, run the following command:
 ```bash
 python main.py
+```
+
+---
+
+## Pack
+To create executable file, run the following command:
+```bash
+pyinstaller -w -F main.py
+```
+---
+
+## Update Git
+It can be used only in wins.
+To update the project version, run the following command:
+```bash
+update.bat
+```
