@@ -313,9 +313,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
                     elif(self.supercap_ == 1):
                         self.pushButton_speedup.setStyleSheet("background-color: green")
                         self.pushButton_fast.setStyleSheet("background-color: blue")
-                        if(self.speed_ > 2):
-                            self.pushButton_fast.setStyleSheet("background-color: blue")
-                            self.pushButton_slow.setStyleSheet("")
+                        self.pushButton_slow.setStyleSheet("")
                         print("已加速")
                 elif(self.mode_ == 1):
                     print("Invalid:只有遥控模式才可加速")
@@ -403,8 +401,9 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             print("切换加速模式(J)")
             if(self.supercap_ == 0):
                 self.pushButton_speedup.setStyleSheet("")
-                self.pushButton_fast.setStyleSheet("")
-                self.pushButton_slow.setStyleSheet("background-color: blue")
+                if(self.speed_==1 or self.speed_==2):
+                    self.pushButton_fast.setStyleSheet("")
+                    self.pushButton_slow.setStyleSheet("background-color: blue")
                 print("未加速")
             elif(self.supercap_ == 1):
                 self.pushButton_speedup.setStyleSheet("background-color: green")
