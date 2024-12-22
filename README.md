@@ -40,5 +40,5 @@ pyinstaller -w -F main.py
 It can be used only in wins.
 To update the project version, run the following command:
 ```bash
-update.bat
+.\update.bat
 ```
