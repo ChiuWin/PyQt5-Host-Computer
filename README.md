@@ -2,7 +2,7 @@
 
 > **NOTE:** This repo contains code for the whole project.
 
-![alt text](.\asset\image.png)
+![alt text](./asset/image.png)
 
 ---
 
