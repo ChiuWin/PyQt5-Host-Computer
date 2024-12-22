@@ -195,14 +195,15 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             if self.ser is None:
                 self.ser = self.init_serial_port(port='COM2', baudrate=9600)
                 self.connected = 1
-                print("串口已打开")
+                print("已连接")
         else:
             # 不满足条件，关闭串口
             if self.ser:
                 self.ser.close()
                 self.ser = None
                 self.connected = 0
-                print("串口已关闭")
+                print("未连接")
+                
 
     def toggle_serial_port(self):
         """ 控制串口打开和关闭 """
@@ -212,7 +213,11 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             if self.ser:
                 self.ser.close()
                 self.ser = None
-                print("串口已关闭")
+                # self.pushButton_stopstate.setStyleSheet("")
+                # self.pushButton_fast.setStyleSheet("")
+                # self.pushButton_slow.setStyleSheet("")
+                # self.pushButton_slow.setStyleSheet("")
+                print("未连接")
 
     def init_serial_port(self, port='COM2', baudrate=9600, parity='N', data_bits=8, stop_bits=1):
         """ 初始化串口 """
@@ -270,7 +275,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
 
     def keyPressEvent(self, event):
         """ 重载按键事件 """
-        if(self.mode_ == 0):
+        if(self.mode_ == 0 and self.connected == 1):
             if event.key() == Qt.Key_W:
                 self.pushButton_goforward.setStyleSheet("background-color: green")
                 self.pushButton_forward.setStyleSheet("background-color: blue")
@@ -305,7 +310,6 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
                     print("切换加速模式(J)")
                     if(self.supercap_ == 0):
                         self.pushButton_speedup.setStyleSheet("")
-                        self.pushButton_fast.setStyleSheet("")
                         if(self.speed_ <= 2):
                             self.pushButton_slow.setStyleSheet("background-color: blue")
                             self.pushButton_fast.setStyleSheet("")
@@ -321,7 +325,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
 
     def keyReleaseEvent(self, event):
         """ 重载按键松开事件，按键松开时恢复原颜色并重置move_ """
-        if(self.mode_ == 0):
+        if(self.mode_ == 0 and self.connected == 1):
             if event.key() == Qt.Key_W:
                 self.pushButton_goforward.setStyleSheet("")
                 self.pushButton_forward.setStyleSheet("")
@@ -364,7 +368,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
 
     def set_move_forward(self):
         """前进按钮点击"""
-        if(self.mode_ == 0):
+        if(self.mode_ == 0 and self.connected == 1):
             self.pushButton_goforward.setStyleSheet("background-color: green")
             self.pushButton_forward.setStyleSheet("background-color: blue")
             self.pushButton_stop.setStyleSheet("")
@@ -372,7 +376,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             print("前进 (W)")
 
     def set_move_backup(self):
-        if(self.mode_ == 0):
+        if(self.mode_ == 0 and self.connected == 1):
             self.pushButton_backup.setStyleSheet("background-color: green")
             self.pushButton_back.setStyleSheet("background-color: blue")
             self.pushButton_stop.setStyleSheet("")
@@ -380,7 +384,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             print("后退 (S)")
 
     def set_move_turnleft(self):
-        if(self.mode_ == 0):
+        if(self.mode_ == 0 and self.connected == 1):
             self.pushButton_turnleft.setStyleSheet("background-color: green")
             self.pushButton_left.setStyleSheet("background-color: blue")
             self.pushButton_stop.setStyleSheet("")
@@ -388,7 +392,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             print("左转 (A)")
 
     def set_move_turnright(self):
-        if(self.mode_ == 0):
+        if(self.mode_ == 0 and self.connected == 1):
             self.pushButton_turnright.setStyleSheet("background-color: green")
             self.pushButton_right.setStyleSheet("background-color: blue")
             self.pushButton_stop.setStyleSheet("")
@@ -396,7 +400,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
             print("右转 (D)")
 
     def set_supercap_speedup(self):
-        if(self.mode_ == 0):
+        if(self.mode_ == 0 and self.connected == 1):
             self.supercap_ = 1- self.supercap_#切换加速状态
             print("切换加速模式(J)")
             if(self.supercap_ == 0):
@@ -410,11 +414,11 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
                 self.pushButton_fast.setStyleSheet("background-color: blue")
                 self.pushButton_slow.setStyleSheet("")
                 print("已加速")
-        elif(self.mode_ == 1):
+        elif(self.mode_ == 1 and self.connected == 1):
             print("Invalid:只有遥控模式才可加速")
 
     def reset_move(self):
-        if(self.mode_ == 0):
+        if(self.mode_ == 0 and self.connected == 1):
             self.pushButton_goforward.setStyleSheet("")
             self.pushButton_backup.setStyleSheet("")
             self.pushButton_turnleft.setStyleSheet("")
@@ -511,7 +515,7 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
                 print("接收数据不完整")
         else:
             if(self.connected):
-                print("串口没有数据")
+                print("下位机没有发送数据")
                 if(self.mode_ == 1):
                     self.pushButton_stopstate.setStyleSheet("")
                     self.pushButton_runstate.setStyleSheet("")
@@ -548,5 +552,3 @@ class ToolUi(QMainWindow, ui.Ui_MainWindow):
         except Exception as e:
             # 弹出错误提示框
             QMessageBox.critical(self, "导出失败", f"导出失败：{str(e)}")    
-
-
